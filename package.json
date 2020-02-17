@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://gitlab.com/recette_lemonweed/dmc.wrap.git"
+    "url": "git+https://gitlab.com/dmc.wrap/dmc.wrap.git"
   },
   "author": "recette lemonweed",
   "license": "GPL-3.0-or-later",
   "bugs": {
-    "url": "https://gitlab.com/recette_lemonweed/dmc.wrap/issues"
+    "url": "https://gitlab.com/dmc.wrap/dmc.wrap/issues"
   },
-  "homepage": "https://gitlab.com/recette_lemonweed/dmc.wrap",
+  "homepage": "https://eiko.cc/dmc.wrap/",
   "dependencies": {
     "ws": "^7.2.1"
   }
