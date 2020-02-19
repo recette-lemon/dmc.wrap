@@ -7,47 +7,86 @@ function getMessages(args, _this, req){
 	args.cId = _this.id;
 	return new Promise((resolve, reject) => {
 		_this._client.request(req, args).then(mes => {
-
 			resolve(new Collection(mes));
-
 		}, reject);
 	});
 }
 
+function getMimeFromBuffer(data){
+	return new Promise((resolve, reject) => {
+		let out = [];
+		let p = require('child_process').execFile("file", ["-", "--mime-type", "-b"], {
+			encoding: "buffer"
+		});
+
+		p.stdout.on("data", (d) => {
+			out.push(d);
+		});
+
+		p.on("exit", () => {
+			resolve(Buffer.concat(out).toString().slice(0, -1));
+		});
+
+		p.stdin.write(data.slice(0, 500)); // errors if given too much, and seems to work with just 500
+		p.stdin.end();
+	});
+}
+
+function getFile(path){
+	return new Promise((resolve, reject) => {
+		if(path.startsWith("http")){
+			let http = require(path.startsWith("https") ? "https" : "http");
+			http.get(path, (res) => {
+				let chunks = [];
+				res.on("data", (chunk) => {
+					chunks.push(chunk);
+				});
+				res.on("end", () => {
+					resolve(Buffer.concat(chunks));
+				});
+				res.on("error", reject);
+			});
+		} else {
+			require("fs").readFile(path, (err, data) => {
+				if(err)
+					return reject(err);
+				resolve(data);
+			});
+		}
+	});
+}
+
+// only works on linux for now
 function uploadFile(path, client){
 	return new Promise((resolve, reject) => {
-		require("fs").readFile(path, (err, data) => {
-			if(err)
-				return reject(err);
-
+		getFile(path).then((data) => {
 			let s = Math.random().toString(36).slice(2);
 			let hash = require("../utility.js").hashSHA256(data).toString("hex");
 
-			// only works on linux for now
-			let mime = require('child_process').execFileSync("file", [path, "--mime-type", "-b"]).toString().slice(0, -1) || "";
+			getMimeFromBuffer(data).then((mime) => {
+				client.request("uploadfile", {
+					hash,
+					name: path.split("/").pop(),
+					contentType: mime,
+					size: data.length
+				}, s).then((res) => {
+					if(res.hash)
+						return resolve(hash);
 
-			client.request("uploadfile", {
-				hash,
-				name: require("path").parse(path).base,
-				contentType: mime,
-				size: data.length
-			}, s).then((res) => {
-				if(res.hash)
-					return resolve(hash);
+					let promises = [];
+					let nChunks = Math.ceil(data.length / 10240);
 
-				let promises = [];
-				let nChunks = Math.ceil(data.length / 10240);
+					for (var i = 0; i < nChunks; i++) {
+						promises.push(client.request("uploadfile", {
+							part: i,
+							bin: data.slice(i*10240, (i+1)*10240)
+						}, s+"-"+i));	
+					}
 
-				for (var i = 0; i < nChunks; i++) {
-					promises.push(client.request("uploadfile", {
-						part: i,
-						bin: data.slice(i*10240, (i+1)*10240)
-					}, s+"-"+i));	
-				}
-
-				Promise.all(promises).then(() => {
-					resolve(hash);
-				}, reject);
+					Promise.all(promises).then(() => {
+						resolve(hash);
+					}, reject);
+				});
 			});
 		});
 	});
@@ -119,7 +158,7 @@ class Channel{
 	@method
 	@param {String} content
 	@param {Object=} options
-	@param {Array=} options.files Path to files to upload with message.
+	@param {Array=} options.files Path/URL to files to upload with message.
 	@return {Promise}
 	*/
 	send(content, options={}){
