@@ -8,6 +8,7 @@ const Message = require("./Message.js");
 
 const Crypto = require("crypto");
 const Utility = require("../utility.js");
+const MsgPack = require("@ygoe/msgpack");
 
 const assert = require("assert");
 
@@ -23,7 +24,7 @@ const assert = require("assert");
 @property {Collection:Role} roles
 @property {Collection:User} users
 @property {Collection:Channel} channels
-@property {Float} pings Time it took for the last 10 responses in ms.
+@property {Array:Float} pings Time it took for the last 10 responses in ms.
 @property {Float} ping Average of pings.
 @property {User} user
 
@@ -66,20 +67,9 @@ class Client extends require("ws"){
 		this.pings = [];
 
 		this.on("message", (message) => {
-			message = JSON.parse(message);
+			message = MsgPack.decode(message);
 			if(process.argv.indexOf("--db") !== -1 )
 				console.log("RECIEVED", message);
-
-			// someone tell hentai id isnt a fucking acronym
-			if(Array.isArray(message.data)){
-				message.data.forEach((d) => {
-					d.id = d.ID;
-					delete d.ID;
-				});
-			} else {
-				message.data.id = message.data.ID;
-				delete message.data.ID;
-			}
 			
 			let data = manageChanges(message.name || message.type, message.data);
 
@@ -102,8 +92,6 @@ class Client extends require("ws"){
 
 		// maintain consistency with the kept data.
 		function manageChanges(type, obj){
-			//console.log("manage changes", type)
-
 			// curse the way switch handles let
 			let mes, chan, role, user;
 			switch(type){
@@ -179,15 +167,15 @@ class Client extends require("ws"){
 				// role add/remove
 				case "addusertorole":
 				case "roleaddedtouser":
-					user = _this.users.get(obj.UID);
-					role = _this.roles.get(obj.RID);
+					user = _this.users.get(obj.uId);
+					role = _this.roles.get(obj.rId);
 					user.roles.set(role.id, role);
 					return {user, role};
 
 				case "roleremovedfromuser":
 				case "removeuserfromrole":
-					user = _this.users.get(obj.UID);
-					role = _this.roles.get(obj.RID);
+					user = _this.users.get(obj.uId);
+					role = _this.roles.get(obj.rId);
 					user.roles.delete(role.id);
 					return {user, role};
 			}
@@ -235,10 +223,8 @@ class Client extends require("ws"){
 	@param {Object=} data
 	@return {Promise}
 	*/
-	request(type, data={}){
+	request(type, data={}, s=Math.random().toString(36).slice(2)){
 		return new Promise((resolve, reject) => {
-			let s = Math.random().toString(36).slice(2);
-
 			this.responseQueue.set(s, [resolve, reject, (new Date).getTime()]);
 
 			let out = {
@@ -249,7 +235,7 @@ class Client extends require("ws"){
 
 			if(process.argv.indexOf("--db") !== -1 )
 				console.log("SENDING", out);
-			this.send(JSON.stringify(out));
+			this.send(MsgPack.encode(out));
 		});
 	}
 
@@ -359,7 +345,7 @@ Bot.createRole({
 	@param {Object} properties
 	@param {String} properties.name
 	@param {String} properties.description
-	@param {Int=} properties.PID Parent id. Defaults to no parent.
+	@param {Int=} properties.pID Parent id. Defaults to no parent.
 	@param {Int} properties.order
 	@param {String/Int} properties.type 0: text, 1: category
 	@param {Object=} properties.perms Role permission overrides. Format is {roleId: permString}.
@@ -370,20 +356,20 @@ Bot.createRole({
 	*/
 	createChannel(props){
 		if(props.order !== undefined)
-			props.OID = props.order
+			props.oId = props.order
 
 		assert(props.name && props.description !== undefined &&
-			props.OID !== undefined && props.type !== undefined,
+			props.oId !== undefined && props.type !== undefined,
 			"invalid properties");
 
 		if(typeof(props.type) === "string")
 			props.type = ["text", "category"].indexOf(props.type); 
 
 		props.perms = props.perms || {};
-		props.PID = props.PID || -1;
+		props.pID = props.pID || -1;
 
-		if(props.PID !== -1)
-			assert(this.channels.get(props.PID).type === 1, "parent isnt a category channel");
+		if(props.pID !== -1)
+			assert(this.channels.get(props.pID).type === 1, "parent isnt a category channel");
 
 		return this.request("addchannel", props);
 	}

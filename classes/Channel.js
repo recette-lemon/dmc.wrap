@@ -4,7 +4,7 @@ const Collection = require("./Collection.js");
 const Permissions = require("./Permissions.js");
 
 function getMessages(args, _this, req){
-	args.CID = _this.id;
+	args.cId = _this.id;
 	return new Promise((resolve, reject) => {
 		_this._client.request(req, args).then(mes => {
 
@@ -48,14 +48,14 @@ class Channel{
 		this.children = new Collection();
 		this.messages = new Collection();
 
-		this.position = this.OID;
-		delete this.OID;
+		this.position = this.oId;
+		delete this.oId;
 
 		this.permissions = new Permissions(this.perms[1], this.perms[2]);
 		delete this.perms;
 
-		let parentId = this.PID;
-		delete this.PID;
+		let parentId = this.pId;
+		delete this.pId;
 
 		if(parentId === -1)
 			return this.parent = null;
@@ -82,10 +82,13 @@ class Channel{
 	@return {Promise}
 	*/
 	send(content){
-		//console.log(this.constructor.name)
 		return this._client.request("sendmsg", {
-			CID: this.id,
-			content
+			cId: this.id,
+			content,
+			attachments: {
+				files: [],
+				embeds: []
+			}
 		});
 	}
 
@@ -119,7 +122,7 @@ class Channel{
 	@throws parent isnt a category channel
 	*/
 	createChild(props){
-		props.PID = this.id;
+		props.pId = this.id;
 		return this._client.createChannel(props);
 	}
 
@@ -129,7 +132,7 @@ class Channel{
 	*/
 	delete(){
 		return this._client.request("deletechannel", {
-			CID: this.id
+			cId: this.id
 		});
 	}
 
@@ -144,7 +147,7 @@ class Channel{
 	@return {Promise}
 	*/
 	edit(props){
-		props.CID = this.id;
+		props.cId = this.id;
 		return this._client.request("editchannel", props);
 	}
 }

@@ -44,7 +44,7 @@ class Role{
 	*/
 	delete(){
 		return this._client.request("deleterole", {
-			RID: this.id
+			rId: this.id
 		});
 	}
 
@@ -66,7 +66,7 @@ class Role{
 		if(props.hoisted)
 			props.displayType = props.hoisted;
 		
-		changes.RID = this.id;
+		changes.rId = this.id;
 		return this._client.request("deleterole", changes);
 	}
 }

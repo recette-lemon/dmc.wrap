@@ -1,5 +1,7 @@
 "use strict";
 
+const File = require("./File.js");
+
 /**
 @class
 @param {Object} obj
@@ -28,22 +30,32 @@ class Message{
 			value: client
 		});
 
-		this.user = this._client.users.get(this.UID);
-		this.channel = this._client.channels.get(this.CID);
-		delete this.UID;
-		delete this.CID;
+		this.user = this._client.users.get(this.uId);
+		this.channel = this._client.channels.get(this.cId);
+		delete this.uId;
+		delete this.cId;
 
 		this.createdTime = this.time;
 		delete this.time;
 
 		this.pinned = !!this.pinned;
 		this.edited = !!this.edited;
-		this.editor = this.editorID ? this._client.users.get(this.editorID) : null;
-		delete this.editorID;
+		this.editor = this.editorId ? this._client.users.get(this.editorId) : null;
+		delete this.editorId;
+
+		this.attachments.files = this.attachments.files.map(f => {return new File(f, this._client)});
 	}
 
 	get author(){
 		return this.user;
+	}
+
+	get files(){
+		return this.attachments.files;
+	}
+
+	get embeds(){
+		return this.attachments.embeds;
 	}
 
 	get createdAt(){
@@ -57,7 +69,7 @@ class Message{
 	*/
 	edit(content){
 		return this._client.request("editmsg", {
-			MID: this.id,
+			mId: this.id,
 			content
 		});
 	}
@@ -68,7 +80,7 @@ class Message{
 	*/
 	delete(){
 		return this._client.request("deletemsg", {
-			MID: this.id
+			mId: this.id
 		});
 	}
 
@@ -83,7 +95,7 @@ class Message{
 			});
 		}
 		return this._client.request("togglepinmsg", {
-			MID: this.id
+			mId: this.id
 		});
 	}
 
@@ -98,7 +110,7 @@ class Message{
 			});
 		}
 		return this._client.request("togglepinmsg", {
-			MID: this.id
+			mId: this.id
 		});
 	}
 

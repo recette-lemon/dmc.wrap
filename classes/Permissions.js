@@ -21,6 +21,7 @@ const globalToggles = [
 ];
 
 const globalNumbers = [
+	"UPLOADSIZELIMIT",
 	"BANCOOLDOWN",
 	"MAXBANTIME"
 ];
@@ -58,9 +59,7 @@ const channelToggles = [
 
 const channelNumbers = [
 	"ATTACHMENTLIMIT",
-	"UPLOADSIZELIMIT",
-	"POSTTIMEOUT",
-	"POSTTTL",
+	"POSTTIMEOUT"
 ];
 
 function nToV(n){

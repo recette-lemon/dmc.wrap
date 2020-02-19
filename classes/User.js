@@ -9,11 +9,10 @@ function setRoles(roles, _this, req){
 
 	return Promise.all(roles.map((r) => {
 		return _this._client.request(req, {
-			UID: _this.id,
-			RID: r
+			uId: _this.id,
+			rId: r
 		});
 	}));
-
 }
 
 /**
