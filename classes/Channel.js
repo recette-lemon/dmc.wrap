@@ -14,6 +14,45 @@ function getMessages(args, _this, req){
 	});
 }
 
+function uploadFile(path, client){
+	return new Promise((resolve, reject) => {
+		require("fs").readFile(path, (err, data) => {
+			if(err)
+				return reject(err);
+
+			let s = Math.random().toString(36).slice(2);
+			let hash = require("../utility.js").hashSHA256(data).toString("hex");
+
+			// only works on linux for now
+			let mime = require('child_process').execFileSync("file", [path, "--mime-type", "-b"]).toString().slice(0, -1) || "";
+
+			client.request("uploadfile", {
+				hash,
+				name: require("path").parse(path).base,
+				contentType: mime,
+				size: data.length
+			}, s).then((res) => {
+				if(res.hash)
+					return resolve(hash);
+
+				let promises = [];
+				let nChunks = Math.ceil(data.length / 10240);
+
+				for (var i = 0; i < nChunks; i++) {
+					promises.push(client.request("uploadfile", {
+						part: i,
+						bin: data.slice(i*10240, (i+1)*10240)
+					}, s+"-"+i));	
+				}
+
+				Promise.all(promises).then(() => {
+					resolve(hash);
+				}, reject);
+			});
+		});
+	});
+}
+
 /**
 @class
 @param {Object} obj
@@ -79,16 +118,24 @@ class Channel{
 	/**
 	@method
 	@param {String} content
+	@param {Object=} options
+	@param {Array=} options.files Path to files to upload with message.
 	@return {Promise}
 	*/
-	send(content){
-		return this._client.request("sendmsg", {
-			cId: this.id,
-			content,
-			attachments: {
-				files: [],
-				embeds: []
-			}
+	send(content, options={}){
+		return new Promise((resolve, reject) => {
+			Promise.all((options.files || []).map((path) => {
+				return uploadFile(path, this._client);
+			})).then((files) => {
+				this._client.request("sendmsg", {
+					cId: this.id,
+					content,
+					attachments: {
+						files,
+						embeds: []
+					}
+				}).then(resolve, reject);
+			});
 		});
 	}
 

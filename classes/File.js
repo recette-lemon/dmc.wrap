@@ -9,7 +9,7 @@
 @property {String} name
 @property {String} contentType Mime type.
 @property {Int} size In bytes.
-@property {String} url.
+@property {String} url
 */
 class File{
 	constructor(obj, client){
