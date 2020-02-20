@@ -1,6 +1,6 @@
 {
   "name": "dmc.wrap",
-  "version": "1.1.0",
+  "version": "1.1.2",
   "description": "API wrapper for DMC.Chat.",
   "main": "index.js",
   "scripts": {

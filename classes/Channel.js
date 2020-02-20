@@ -61,7 +61,7 @@ function uploadFile(path, client){
 	return new Promise((resolve, reject) => {
 		getFile(path).then((data) => {
 			let s = Math.random().toString(36).slice(2);
-			let hash = require("../utility.js").hashSHA256(data).toString("hex");
+			let hash = require("../utility.js").hashSHA256(data);
 
 			getMimeFromBuffer(data).then((mime) => {
 				client.request("uploadfile", {
@@ -70,6 +70,7 @@ function uploadFile(path, client){
 					contentType: mime,
 					size: data.length
 				}, s).then((res) => {
+					console.log("this is the hash")
 					if(res.hash)
 						return resolve(hash);
 
@@ -86,9 +87,9 @@ function uploadFile(path, client){
 					Promise.all(promises).then(() => {
 						resolve(hash);
 					}, reject);
-				});
-			});
-		});
+				}, reject);
+			}, reject);
+		}, reject);
 	});
 }
 

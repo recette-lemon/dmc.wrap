@@ -68,8 +68,8 @@ class Client extends require("ws"){
 
 		this.on("message", (message) => {
 			message = MsgPack.decode(message);
-			if(process.argv.indexOf("--db") !== -1 )
-				console.log("RECIEVED", message);
+			if(process.argv.indexOf("--dmcdb") !== -1 )
+				console.log("\x1b[36mRECEIVED\x1b[0m", message);
 			
 			let data = manageChanges(message.name || message.type, message.data);
 
@@ -233,20 +233,20 @@ class Client extends require("ws"){
 				s
 			};
 
-			if(process.argv.indexOf("--db") !== -1 )
-				console.log("SENDING", out);
+			if(process.argv.indexOf("--dmcdb") !== -1 )
+				console.log("\x1b[31mSENDING\x1b[0m", out);
 			this.send(MsgPack.encode(out));
 		});
 	}
 
 	_auth(){
-		let key = this.ecdh.getPublicKey("hex");
+		let key = this.ecdh.getPublicKey();
 		this.request("auth", {key}).then((res) => {
 
 			// compute share secret, hash it, then set up iv and cipherText.
-			let secretHash = Utility.hashSHA256(this.ecdh.computeSecret(res.key, "hex"));
-			let iv = Buffer.from(res.iv, "hex");
-			let cipherText = Buffer.from(res.ciphertext, "hex");
+			let secretHash = Utility.hashSHA256(this.ecdh.computeSecret(res.key));
+			let iv = Buffer.from(res.iv);
+			let cipherText = Buffer.from(res.ciphertext);
 
 			// use hashed secret to decrypt ciphertext, then hash it.
 			let decipher = Crypto.createDecipheriv("aes-256-cbc", secretHash, iv);
@@ -255,7 +255,7 @@ class Client extends require("ws"){
 			
 			// send hash as hex
 			let d = {
-				hash: bytesHash.toString("hex")
+				hash: bytesHash
 			};
 
 			// needed if you're creating an account.
