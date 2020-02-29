@@ -46,12 +46,12 @@ const assert = require("assert");
 @fires roleaddedtouser
 @fires roleremovedfromuser
 */
-
 class Client extends require("ws"){
 	constructor(privateKey, options={}){
 		assert(privateKey, "need a private key");
 
 		super(options.url || "wss://ws.dmc.chat:9000/");
+		this.fileEndpoint = options.fileEndpoint || "https://files.dmc.chat/";
 
 		this.ecdh = Crypto.createECDH("secp521r1");
 		this.ecdh.setPrivateKey(privateKey, "hex");
@@ -68,7 +68,7 @@ class Client extends require("ws"){
 
 		this.on("message", (message) => {
 			message = MsgPack.decode(message);
-			if(process.argv.indexOf("--dmcdb") !== -1 )
+			if(process.argv.indexOf("--dmcdb") !== -1)
 				console.log("\x1b[36mRECEIVED\x1b[0m", message);
 			
 			let data = manageChanges(message.name || message.type, message.data);
@@ -178,6 +178,12 @@ class Client extends require("ws"){
 					role = _this.roles.get(obj.rId);
 					user.roles.delete(role.id);
 					return {user, role};
+
+				// user
+				case "setavi":
+					user = _this.users.get(obj.id);
+					Object.assign(user, new User(obj, _this));
+					return user;
 			}
 			
 			return obj;
@@ -233,7 +239,7 @@ class Client extends require("ws"){
 				s
 			};
 
-			if(process.argv.indexOf("--dmcdb") !== -1 )
+			if(process.argv.indexOf("--dmcdb") !== -1)
 				console.log("\x1b[31mSENDING\x1b[0m", out);
 			this.send(MsgPack.encode(out));
 		});
@@ -372,6 +378,22 @@ Bot.createRole({
 			assert(this.channels.get(props.pID).type === 1, "parent isnt a category channel");
 
 		return this.request("addchannel", props);
+	}
+
+	/**
+	@method
+	@param {String} path Path/URL to pic to set as avatar. Has to be square.
+	@todo Automatically crop.
+	@returns {Promise<User>}
+	*/
+	setAvatar(path){
+		return new Promise((resolve, reject) => {
+			Utility.uploadFile(path, this).then(hash => {
+				this.request("setavi", {
+					hash
+				}).then(resolve, reject);
+			}, reject);
+		});
 	}
 }
 

@@ -9,7 +9,8 @@ const File = require("./File.js");
 
 @property {Int} id
 @property {String} content
-@property {Array} attachments 
+@property {Array} attachments
+@property {Array} files
 @property {Int} TTL Time to live until auto-deletion.
 @property {Bool} pinned
 @property {Bool} edited

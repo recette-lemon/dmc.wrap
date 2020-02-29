@@ -10,6 +10,8 @@
 @property {String} contentType Mime type.
 @property {Int} size In bytes.
 @property {String} url
+@property {Int} width Images only.
+@property {Int} height Images only.
 */
 class File{
 	constructor(obj, client){
@@ -23,7 +25,7 @@ class File{
 	}
 
 	get url(){
-		return "https://files.dmc.chat/"+this.hash+"/"+this.name;
+		return this._client.fileEndpoint+this.hash.toString("hex")+"/"+this.name;
 	}
 }
 

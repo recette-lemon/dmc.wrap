@@ -25,6 +25,7 @@ function setRoles(roles, _this, req){
 @property {String} nick Nickname.
 @property {Int} joinedTime
 @property {Date} joinedAt
+@property {String} avatar URL to user avatar.
 @property {Int} state 0: offline, 1: online, 2: afk, 3: busy
 @property {String} stateText
 @property {String} avatarUrl
@@ -32,7 +33,6 @@ function setRoles(roles, _this, req){
 @property {Collection} roles
 @property {Collection} messages
 */
-
 class User{
 	constructor(obj, client){
 		Object.assign(this, obj);
@@ -52,6 +52,10 @@ class User{
 
 	get joinedAt(){
 		return new Date(this.joinedTime);
+	}
+
+	get avatar(){
+		return this._client.fileEndpoint+"avi/"+this.id;
 	}
 
 	/**
