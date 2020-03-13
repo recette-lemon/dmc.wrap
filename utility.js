@@ -1,8 +1,8 @@
 "use strict";
 
 /**
-@module Utility
 Most of these you shouldn't need to use.
+@module Utility
 */
 
 const Crypto = require("crypto");

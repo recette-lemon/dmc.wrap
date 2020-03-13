@@ -169,6 +169,8 @@ class Client extends require("ws"){
 				case "roleaddedtouser":
 					user = _this.users.get(obj.uId);
 					role = _this.roles.get(obj.rId);
+					if(!user)
+						return;
 					user.roles.set(role.id, role);
 					return {user, role};
 
